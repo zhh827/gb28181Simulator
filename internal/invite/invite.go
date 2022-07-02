@@ -77,9 +77,10 @@ func (inv *Invite) HandleMsg(xlog *xlog.Logger, tr *transport.Transport, m *sip.
 
 	xlog.Info("recv msg at ", inv.state, m)
 }
+
 func (inv *Invite) InviteMsg(xlog *xlog.Logger, tr *transport.Transport, m *sip.Msg) {
-	// only handle invite idle state
-	xlog.Info("Sever------>Invite--->Client")
+	xlog.Info("Sever------>Invite--->Client", atomic.LoadInt32(&inv.state))
+	// 判断是否为 idel状态
 	if atomic.LoadInt32(&inv.state) != idle {
 		return
 	}
@@ -106,9 +107,11 @@ func (inv *Invite) InviteMsg(xlog *xlog.Logger, tr *transport.Transport, m *sip.
 
 	resp := inv.makeRespFromReq(laHost, laPort, m, true, 200)
 	inv.leg = &Leg{m.CallID, m.From.Param.Get("tag").Value, resp.To.Param.Get("tag").Value}
+	// 修改状态为 completed (1), 等待 bye消息后转换为0
 	atomic.StoreInt32(&inv.state, completed)
 	xlog.Info("Client------>200OK(Invite)--->Server")
 	tr.Send <- resp
+	// 等待接收到 ACKMSG, 执行AckMsg函数
 }
 func (inv *Invite) makeRespFromReq(localHost string, localPort int, req *sip.Msg, invite bool, code int) *sip.Msg {
 	resp := &sip.Msg{
@@ -126,6 +129,7 @@ func (inv *Invite) makeRespFromReq(localHost string, localPort int, req *sip.Msg
 			Port:     uint16(localPort),
 			Param:    &sip.Param{Name: "branch", Value: req.Via.Param.Get("branch").Value},
 		},
+		Contact: req.To,
 	}
 
 	if invite && code == 200 {
@@ -153,6 +157,7 @@ func (inv *Invite) makeRespFromReq(localHost string, localPort int, req *sip.Msg
 	}
 	return resp
 }
+
 func ssrc(sdp *sdp.SDP) int {
 	for _, i := range sdp.Other {
 		if i[0] == "y" {
@@ -180,6 +185,7 @@ func randomFromStartEnd(min, max int) int {
 
 	return rand.Intn(max-min+1) + min
 }
+
 func (inv *Invite) sendRTPPacket(xlog *xlog.Logger) {
 	if inv.remote.proto == "UDP" {
 		inv.rtp = packet.NewRRtpTransfer("", packet.UDPTransfer, inv.remote.ssrc)
@@ -188,6 +194,7 @@ func (inv *Invite) sendRTPPacket(xlog *xlog.Logger) {
 		inv.rtp = packet.NewRRtpTransfer("", packet.TCPTransferActive, inv.remote.ssrc)
 	}
 	// send ip,port and recv ip,port
+	// xlog.Info("server info = ", inv.remote.lip, inv.remote.ip, inv.remote.lPort, inv.remote.port)
 	err := inv.rtp.Service(inv.remote.lip, inv.remote.ip, inv.remote.lPort, inv.remote.port)
 	if err != nil {
 		xlog.Info("connect failed, err = ", err)
@@ -216,6 +223,7 @@ func (inv *Invite) sendRTPPacket(xlog *xlog.Logger) {
 
 	}
 }
+
 func (inv *Invite) sendFile(buf []byte) {
 	last := 0
 	var pts uint64 = 0
@@ -231,6 +239,7 @@ func (inv *Invite) sendFile(buf []byte) {
 		}
 	}
 }
+
 func isPsHead(buf []byte) bool {
 	h := []byte{0, 0, 1, 186}
 	if len(buf) == 4 {

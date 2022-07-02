@@ -63,6 +63,7 @@ func msgType(m *sip.Msg) string {
 }
 func (s *Service) HandleIncommingMsg() {
 	s.hookSignals()
+	// 处理channel 接收到的消息
 	for m := range s.tr.Recv {
 
 		if m.IsResponse() && s.regSrv.HandleResponse(s.xlog, s.tr, m) {
