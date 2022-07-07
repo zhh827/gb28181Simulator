@@ -49,17 +49,17 @@ func NewRRtpTransfer(src string, pro int, ssrc int) *RtpTransfer {
 //Service ...
 func (rtp *RtpTransfer) Service(srcip, dstip string, srcport, dstport int) error {
 
-	if nil == rtp.timerProcess {
-		rtp.timerProcess = time.NewTicker(time.Second * time.Duration(5))
-	}
+	// if nil == rtp.timerProcess {
+	// 	rtp.timerProcess = time.NewTicker(time.Second * time.Duration(5))
+	// }
 	if rtp.protocol == TCPTransferPassive {
 		go rtp.write4tcppassive(srcip+":"+strconv.Itoa(srcport),
 			dstip+":"+strconv.Itoa(dstport))
-
 	} else if rtp.protocol == TCPTransferActive {
 		// connect to to dst ip port
 		go rtp.write4tcpactive(dstip, dstport)
 	} else if rtp.protocol == UDPTransfer {
+		// 创建udp连接
 		conn, err := net.DialUDP("udp",
 			&net.UDPAddr{
 				IP:   net.ParseIP(srcip),
@@ -85,7 +85,6 @@ func (rtp *RtpTransfer) Service(srcip, dstip string, srcport, dstport int) error
 
 //Exit ...
 func (rtp *RtpTransfer) Exit() {
-
 	if nil != rtp.timerProcess {
 		rtp.timerProcess.Stop()
 	}
@@ -94,38 +93,43 @@ func (rtp *RtpTransfer) Exit() {
 }
 
 func (rtp *RtpTransfer) Send2data(data []byte, key bool, pts uint64) {
-	psSys := rtp.psEnc.encPackHeader(pts)
-	if key { // just I frame will add this
-		psSys = rtp.psEnc.encSystemHeader(psSys, 2048, 512)
-		psSys = rtp.psEnc.encProgramStreamMap(psSys)
+	// rtp.payload <- data
+	// return
+	psSys := rtp.psEnc.encPackHeader(pts) // PS Header 14byte
+	if key {                              // 只有I帧 添加 PSSystemHeader PSProgramStreamMap
+		psSys = rtp.psEnc.encSystemHeader(psSys, 2048, 512) // SystemHeader 18 byte
+		psSys = rtp.psEnc.encProgramStreamMap(psSys)        // ProgramStreamMap 24 byte
+		fmt.Println("add SystemHeader ProgramStreamMap", len(psSys))
 	}
-
 	lens := len(data)
 	var index int
 	for lens > 0 {
 		pesload := lens
+		// 判断 数据是否大于最大承载0xFFFF
 		if pesload > PESLoadLength {
 			pesload = PESLoadLength
 		}
+		// PES header + H264 data
 		pes := rtp.psEnc.encPESPacket(data[index:index+pesload], StreamIDVideo, pesload, pts, pts)
 
-		// every frame add ps header
+		// 每帧添加一个 ps header
 		if index == 0 {
+			// 拼接 header + pes
 			pes = append(psSys, pes...)
+			// fmt.Printf("pes: %x\n", psSys)
 		}
 		// remain data to package again
 		// over the max pes len and split more pes load slice
 		index += pesload
 		lens -= pesload
+		// 封装 为 rtp包
 		if lens > 0 {
 			rtp.fragmentation(pes, pts, 0)
 		} else {
 			// the last slice
 			rtp.fragmentation(pes, pts, 1)
-
 		}
 	}
-
 }
 
 func (rtp *RtpTransfer) SendPSdata(data []byte, key bool, pts uint64) {
@@ -175,8 +179,8 @@ func (rtp *RtpTransfer) fragmentation(data []byte, pts uint64, last int) {
 		}
 	}
 }
-func (rtp *RtpTransfer) encRtpHeader(data []byte, marker int, curpts uint64) []byte {
 
+func (rtp *RtpTransfer) encRtpHeader(data []byte, marker int, curpts uint64) []byte {
 	if rtp.protocol == LocalCache {
 		return data
 	}
@@ -200,7 +204,6 @@ func (rtp *RtpTransfer) encRtpHeader(data []byte, marker int, curpts uint64) []b
 		return append(rtpOvertcp, data...)
 	}
 	return append(bits.pData, data...)
-
 }
 
 func (rtp *RtpTransfer) write4udp() {
@@ -211,6 +214,7 @@ func (rtp *RtpTransfer) write4udp() {
 		case data, ok := <-rtp.payload:
 			if ok {
 				if rtp.udpconn != nil {
+					// 发送数据
 					lens, err := rtp.udpconn.Write(data)
 					if err != nil || lens != len(data) {
 						log.Errorf("write data by udp error(%v), len(%v).", err, lens)
@@ -221,9 +225,9 @@ func (rtp *RtpTransfer) write4udp() {
 				log.Error("rtp data channel closed")
 				goto UDPSTOP
 			}
-		case <-rtp.timerProcess.C:
-			log.Error("channel recv data timeout")
-			goto UDPSTOP
+		// case <-rtp.timerProcess.C:
+		// 	log.Error("channel recv data timeout")
+		// 	goto UDPSTOP
 		case <-rtp.writestop:
 			log.Error("udp rtp send channel stop")
 			goto UDPSTOP
@@ -300,7 +304,7 @@ func (rtp *RtpTransfer) write4tcpactive(dstaddr string, port int) {
 			if ok {
 				lens, err := rtp.tcpconn.Write(data)
 				if err != nil || lens != len(data) {
-					//					log.Errorf("write data by tcp error(%v), len(%v).", err, lens, len(data))
+					log.Errorf("write data by tcp error(%v), len(%v).", err, lens, len(data))
 					break
 				}
 
@@ -318,7 +322,7 @@ func (rtp *RtpTransfer) write4tcpactive(dstaddr string, port int) {
 func (rtp *RtpTransfer) write4file() {
 
 	log.Infof(" stream data will be write by(%v)", rtp.protocol)
-	files, err := os.OpenFile("./test.dat", os.O_CREATE|os.O_WRONLY, 0666)
+	files, err := os.OpenFile("./test.dat111", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Errorf("open test.dat file err(%v", err)
 		return

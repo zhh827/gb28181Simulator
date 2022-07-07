@@ -107,3 +107,55 @@
 | PES_header_data_length| 8| PES标题数据长度字段 |
 
 注：后面会根据此长度来填写 pts， dts等
+
+
+#### 数据格式
+```
+ps heder: 00 00 01 BA
+	ps头长度为14个字节，最后一个字节的后三位的数字标识扩展字节，
+
+ps system header: 00 00 01 BB
+ 	00 0C 后面的两个字节共同表示ps system header的长度
+
+ps system map: 00 00 01 bc
+	00 1E 后面的两个字节代表ps system map 的长度
+
+pes header: 00 00 01 E0 视频流为0xe0,音频流为0xc0,私有数据流为0xbd
+	00 22  两个字节表示pes包剩余数据的长度,表示后面还有 34个字节(不包括00 00 01 E0 00 22)
+	80 00 
+	08 	   pes包的扩展长度,08表示有8个扩展字节，扩展字节之后就是h264的数据
+	H264数据量= 34 - 3(80 00 08) - 8(扩展字节数) = 23
+
+H264 数据格式
+	NAL Header:
+		00 00 00 01 01: B Slice
+		00 00 00 01 06: SEI信息
+        00 00 00 01 09: AU Delimiter
+		00 00 00 01 61: non-IDR Slice
+        00 00 00 01 41: 非I帧 
+		00 00 00 01 67: 0x67&0x1f = 0x07 :SPS
+		00 00 00 01 68: 0x68&0x1f = 0x08 :PPS
+		00 00 00 01 65: 0x65&0x1f = 0x05 :IDR Slice  
+        H264视频帧：由NALU单元组成，其中I帧起始是00 00 00 01 65
+
+AVCC 格式 在这种格式中，每个 NALU 前面都有它的长度（大端格式）。这种方法更容易解析，但失去了Annex B 的字节对齐特性。长度可能使用 1、2 或 4 个字节进行编码。此值存储在标头对象中。此标头通常称为“额外数据”或“序列标头”。其基本格式如下：
+    bits    
+    8   version ( always 0x01 )
+    8   avc profile ( sps[0][1] )
+    8   avc compatibility ( sps[0][2] )
+    8   avc level ( sps[0][3] )
+    6   reserved ( all bits on )
+    2   NALULengthSizeMinusOne
+    3   reserved ( all bits on )
+    5   number of SPS NALUs (usually 1)
+
+    repeated once per SPS:
+    16         SPS size
+    variable   SPS NALU data
+
+    8   number of PPS NALUs (usually 1)
+
+    repeated once per PPS:
+    16       PPS size
+    variable PPS NALU data
+```

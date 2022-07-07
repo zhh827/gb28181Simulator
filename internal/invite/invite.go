@@ -34,6 +34,7 @@ type Leg struct {
 	fromTag string
 	toTag   string
 }
+
 type sdpRemoteInfo struct {
 	ssrc  int
 	ip    string
@@ -42,6 +43,7 @@ type sdpRemoteInfo struct {
 	lPort int
 	lip   string
 }
+
 type Invite struct {
 	cfg    *config.Config
 	state  int32
@@ -54,6 +56,7 @@ type Invite struct {
 func init() {
 	format.RegisterAll()
 }
+
 func NewInvite(cfg *config.Config) *Invite {
 	rand.Seed(time.Now().UnixNano())
 	return &Invite{cfg: cfg, state: idle, byed: make(chan bool)}
@@ -194,11 +197,12 @@ func (inv *Invite) sendRTPPacket(xlog *xlog.Logger) {
 		inv.rtp = packet.NewRRtpTransfer("", packet.TCPTransferActive, inv.remote.ssrc)
 	}
 	// send ip,port and recv ip,port
-	// xlog.Info("server info = ", inv.remote.lip, inv.remote.ip, inv.remote.lPort, inv.remote.port)
+	xlog.Info("Push data Connection info ------ ", inv.remote.lip, inv.remote.ip, inv.remote.lPort, inv.remote.port)
 	err := inv.rtp.Service(inv.remote.lip, inv.remote.ip, inv.remote.lPort, inv.remote.port)
 	if err != nil {
 		xlog.Info("connect failed, err = ", err)
 	}
+
 	f, err := os.Open("test.dat")
 	if err != nil {
 		xlog.Errorf("read file error(%v)", err)
@@ -220,27 +224,29 @@ func (inv *Invite) sendRTPPacket(xlog *xlog.Logger) {
 		default:
 			inv.sendFile(buf)
 		}
-
 	}
 }
 
 func (inv *Invite) sendFile(buf []byte) {
 	last := 0
 	var pts uint64 = 0
-	for i := 4; i < len(buf); i++ {
+	for i := 0; i < len(buf); i++ {
 		if inv.state == idle {
 			return
 		}
+		// 循环遍历,寻找Pack_start_code
 		if isPsHead(buf[i : i+4]) {
 			inv.rtp.SendPSdata(buf[last:i], false, pts)
 			pts += 40
-			time.Sleep(time.Millisecond * 40)
+			time.Sleep(time.Millisecond * 40) // 40ms 每秒25帧
 			last = i
 		}
 	}
 }
 
 func isPsHead(buf []byte) bool {
+	// 0, 0, 1, 186 hex(00 00 01 BA)   代表 PS 包的开始
+	// fmt.Printf("is header,%x", buf)
 	h := []byte{0, 0, 1, 186}
 	if len(buf) == 4 {
 		for i := 0; i < 4; i++ {
