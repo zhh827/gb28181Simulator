@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"my28181/config"
+	"my28181/message/version"
 	"my28181/transport"
 
 	"github.com/jart/gosip/sip"
@@ -65,7 +66,7 @@ func (catalog *Catalog) sendCatalogResp(xlog *xlog.Logger, localHost string, loc
 		CallID:     util.GenerateCallID(),
 		Method:     sip.MethodMessage,
 		CSeqMethod: sip.MethodMessage,
-		UserAgent:  Version(),
+		UserAgent:  version.Version(),
 		Request: &sip.URI{
 			Scheme: "sip",
 			User:   catalog.cfg.ServerID,
@@ -121,7 +122,7 @@ func (catalog *Catalog) makeCatalogRespFromReq(localHost string, localPort int, 
 		CallID:     req.CallID,
 		CSeq:       req.CSeq,
 		CSeqMethod: req.CSeqMethod,
-		UserAgent:  Version(),
+		UserAgent:  version.Version(),
 		Via: &sip.Via{
 			Version:  "2.0",
 			Protocol: "SIP",

@@ -1,4 +1,4 @@
-package message
+package invite
 
 import (
 	"fmt"
@@ -15,6 +15,8 @@ import (
 
 	"my28181/media/streams/packet"
 	"my28181/transport"
+
+	"my28181/message/version"
 
 	"github.com/jart/gosip/sdp"
 	"github.com/jart/gosip/sip"
@@ -130,7 +132,7 @@ func (inv *Invite) makeRespFromReq(localHost string, localPort int, req *sip.Msg
 		CallID:     req.CallID,
 		CSeq:       req.CSeq,
 		CSeqMethod: req.CSeqMethod,
-		UserAgent:  Version(),
+		UserAgent:  version.Version(),
 		Via: &sip.Via{
 			Version:  "2.0",
 			Protocol: "SIP",

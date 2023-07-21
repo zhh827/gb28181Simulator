@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"my28181/config"
+	"my28181/message/version"
 	"my28181/transport"
 
 	"github.com/jart/gosip/sip"
@@ -100,7 +101,7 @@ func (r *Registar) newRegMsg(unReg bool, localHost string, localPort int) *sip.M
 		CallID:     util.GenerateCallID(),
 		Method:     sip.MethodRegister,
 		CSeqMethod: sip.MethodRegister,
-		UserAgent:  Version(),
+		UserAgent:  version.Version(),
 		Request: &sip.URI{
 			Scheme: "sip",
 			User:   r.cfg.ServerID,
@@ -222,7 +223,7 @@ func (r *Registar) newKeepaliveMsg(localHost string, localPort int) *sip.Msg {
 		CallID:     util.GenerateCallID(),
 		Method:     sip.MethodMessage,
 		CSeqMethod: sip.MethodMessage,
-		UserAgent:  Version(),
+		UserAgent:  version.Version(),
 		Request: &sip.URI{
 			Scheme: "sip",
 			User:   r.cfg.ServerID,

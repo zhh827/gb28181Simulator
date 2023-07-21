@@ -11,6 +11,7 @@ import (
 
 	"my28181/config"
 	"my28181/message/catalog"
+	"my28181/message/invite"
 	"my28181/message/reg"
 	"my28181/transport"
 
