@@ -1,15 +1,11 @@
-# gb28181Simulator
+使用go语言开发的GB28181模拟器,在[原作者GIT地址](https://github.com/lzh2nix/gb28181Simulator)代码基础上重构,**目前还在开发中**,计划增加功能如下:
+- [ ] 多会话管理
+- [ ] 直接使用媒体文件播放
+- [ ] 使用本地USB摄像头推流
+- [ ] 接收rtp流,作为虚拟IPC
+- [ ] 作为上级平台,允许nvr注册到本平台
+- [ ] 上下级平台视频流中转
 
-使用 golang 实现的一个GB28181模拟器，主要用于测试目的
-
-**功能**:
-- [x] Register
-- [x] Register retry
-- [x] Register with 401 challange
-- [x] keepalive
-- [x] catalog
-- [x] invite
-- [ ] as a GB28181 benchmark tool
 ### Quick Start
 
 ```bash
