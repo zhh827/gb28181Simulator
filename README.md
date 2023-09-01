@@ -6,13 +6,13 @@
 - [ ] 作为上级平台,允许nvr注册到本平台
 - [ ] 上下级平台视频流中转
 
-### Quick Start
+### 启动
 
 ```bash
 go run main.go -c sim.conf
 ```
 
-### Configure File
+### 配置文件
 ```json
 {
   "localSipPort": 5061,

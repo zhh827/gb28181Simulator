@@ -248,7 +248,7 @@ func (inv *Invite) sendRTPPacket(xlog *xlog.Logger, tr *transport.Transport, m *
 	inv.sendFile(buf)
 	// 播放完成,发送Bye消息
 	inv.SendByeMsg(xlog, tr, m)
-	xlog.Info("播放完成 \n")
+	xlog.Info("播放完成")
 }
 
 func (inv *Invite) sendFile(buf []byte) {

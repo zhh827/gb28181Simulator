@@ -37,8 +37,8 @@ type DeviceInfo struct {
 	Status       string `xml:"Status" json:"status"`
 }
 
-func ParseJsonConfig(f *string) (*Config, error) {
-	jsonFile, err := os.Open(*f)
+func ParseJsonConfig(f string) (*Config, error) {
+	jsonFile, err := os.Open(f)
 	if err != nil {
 		return nil, err
 	}
